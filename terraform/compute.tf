@@ -29,6 +29,7 @@ resource "yandex_compute_instance" "debian_vm_instance" {
   metadata = {
     user-data = templatefile("${path.module}/cloud-init.yaml", {
       ssh_public_key = local.ssh_public_key
+      user_name      = local.user_name
     })
   }
 

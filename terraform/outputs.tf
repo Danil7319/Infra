@@ -10,5 +10,5 @@ output "vm_public_ip" {
 
 output "ssh_command" {
   description = "Public IP of the VM"
-  value       = "ssh debian@${yandex_compute_instance.debian_vm_instance.network_interface.0.nat_ip_address}"
+  value       = "ssh ${local.user_name}@${yandex_compute_instance.debian_vm_instance.network_interface.0.nat_ip_address}"
 }

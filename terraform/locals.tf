@@ -12,6 +12,7 @@ data "http" "my_ip" {
 locals {
   my_ip          = "${jsondecode(data.http.my_ip.response_body).ip}/32"
   ssh_public_key = trimspace(file(var.ssh_public_key_path))
+  user_name      = "debian"
 }
 
 
