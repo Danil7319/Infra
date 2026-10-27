@@ -1,0 +1,6 @@
+cloudflared_repo_arch: "any"
+cloudflared_repo_dist: "main"
+cloudflared_repo_url: "https://pkg.cloudflare.com/cloudflared"
+cloudflared_keyring_path: "/usr/share/keyrings/cloudflare-main.gpg"
+cloudflared_gpg_url: "https://pkg.cloudflare.com/cloudflare-main.gpg"
+cloudflared_service_path: "/etc/systemd/system/cloudflared.service"

@@ -1,0 +1,71 @@
+---
+# 1. Проверка входных данных — падаем сразу, до любых изменений на хосте
+- name: Assert required cloudflared vars are set
+  ansible.builtin.assert:
+    that:
+      - cloudflared_tunnel_token is defined
+      - cloudflared_tunnel_token | length > 0
+    fail_msg: >-
+      cloudflared_tunnel_token не задан или пуст.
+      Установите переменную окружения CLOUDFLARED_TUNNEL_TOKEN
+      перед запуском ansible-playbook.
+    success_msg: "cloudflared_tunnel_token задан."
+    quiet: true
+
+# 2. Каталог для keyring-файлов
+- name: Ensure apt keyrings directory exists
+  ansible.builtin.file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: "0755"
+    owner: root
+    group: root
+
+# 3. GPG-ключ Cloudflare
+- name: Add Cloudflare GPG key
+  ansible.builtin.get_url:
+    url: "{{ cloudflared_gpg_url }}"
+    dest: "{{ cloudflared_keyring_path }}"
+    mode: "0644"
+    owner: root
+    group: root
+    force: false
+
+# 4. apt-репозиторий Cloudflare
+- name: Add Cloudflare apt repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [signed-by={{ cloudflared_keyring_path }}]
+      {{ cloudflared_repo_url }} {{ cloudflared_repo_arch }} {{ cloudflared_repo_dist }}
+    filename: cloudflared
+    state: present
+    update_cache: true
+
+# 5. Установка пакета
+- name: Install cloudflared
+  ansible.builtin.apt:
+    name: cloudflared
+    state: present
+    update_cache: true
+
+# 6. Проверка — установлен ли уже сервис
+- name: Check if cloudflared systemd unit already exists
+  ansible.builtin.stat:
+    path: "{{ cloudflared_service_path }}"
+  register: cloudflared_unit
+
+# 7. Установка сервиса с токеном (только если юнита ещё нет)
+- name: Install cloudflared service with tunnel token
+  ansible.builtin.command:
+    cmd: "cloudflared service install {{ cloudflared_tunnel_token }}"
+    creates: "{{ cloudflared_service_path }}"
+  when: not cloudflared_unit.stat.exists
+  no_log: true
+
+# 8. Включить и запустить
+- name: Ensure cloudflared service is enabled and running
+  ansible.builtin.systemd:
+    name: cloudflared
+    state: started
+    enabled: true
+    daemon_reload: true

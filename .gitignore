@@ -26,3 +26,6 @@ terraform/crash.log
 terraform/crash.*.log
 
 .idea/
+
+# Ansible
+ansible/inventory.ini
