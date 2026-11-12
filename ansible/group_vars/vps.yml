@@ -1,2 +1,0 @@
----
-cloudflared_tunnel_token: "{{ lookup('env', 'CLOUDFLARED_TUNNEL_TOKEN') | default('', true) }}"

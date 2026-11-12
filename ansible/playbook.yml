@@ -1,6 +1,0 @@
----
-- name: Configure VPS
-  hosts: vps
-  become: true
-  roles:
-    - cloudflared

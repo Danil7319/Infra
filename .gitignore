@@ -29,3 +29,4 @@ terraform/crash.*.log
 
 # Ansible
 ansible/inventory.ini
+ansible/runner/inventory.ini

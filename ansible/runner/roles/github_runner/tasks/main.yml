@@ -1,0 +1,74 @@
+---
+- name: Create github-runner user
+  ansible.builtin.user:
+    name: "{{ github_runner_user }}"
+    shell: /bin/bash
+    home: "{{ github_runner_home }}"
+    create_home: true
+  become: true
+
+- name: Create runner directory
+  ansible.builtin.file:
+    path: "{{ github_runner_dir }}"
+    state: directory
+    owner: "{{ github_runner_user }}"
+    group: "{{ github_runner_user }}"
+    mode: '0755'
+  become: true
+
+- name: Check if runner is already downloaded
+  ansible.builtin.stat:
+    path: "{{ github_runner_dir }}/config.sh"
+  register: runner_installed
+  become: true
+
+- name: Download and unpack GitHub Runner
+  when: not runner_installed.stat.exists
+  become: true
+  block:
+    - name: Download runner package
+      ansible.builtin.get_url:
+        url: "https://github.com/actions/runner/releases/download/v{{ github_runner_version }}/actions-runner-linux-x64-{{ github_runner_version }}.tar.gz"
+        dest: "/tmp/actions-runner.tar.gz"
+        mode: '0644'
+
+    - name: Unpack runner package
+      ansible.builtin.unarchive:
+        src: "/tmp/actions-runner.tar.gz"
+        dest: "{{ github_runner_dir }}"
+        remote_src: true
+        owner: "{{ github_runner_user }}"
+        group: "{{ github_runner_user }}"
+
+- name: Check if runner is already configured
+  ansible.builtin.stat:
+    path: "{{ github_runner_dir }}/.runner"
+  register: runner_configured
+  become: true
+
+- name: Configure and install runner as a service
+  when: not runner_configured.stat.exists
+  block:
+    - name: Run config.sh
+      ansible.builtin.command:
+        cmd: >
+          ./config.sh --url https://github.com/{{ github_owner }}/{{ github_repo }}
+          --token {{ github_registration_token }}
+          --name {{ github_runner_name }}
+          --labels {{ github_runner_labels }}
+          --unattended
+          --replace
+        chdir: "{{ github_runner_dir }}"
+      become: true
+      become_user: "{{ github_runner_user }}"
+      no_log: true
+
+- name: Install and start runner service
+  ansible.builtin.command:
+    cmd: ./svc.sh {{ item }}
+    chdir: "{{ github_runner_dir }}"
+  with_items:
+    - install
+    - start
+  become: true
+  ignore_errors: true # Если уже установлен/запущен

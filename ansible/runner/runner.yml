@@ -1,0 +1,11 @@
+- name: Configure VPS
+  hosts: vps
+  roles:
+    - user_setup
+    - github_runner
+  tasks:
+    - name: Install nano
+      ansible.builtin.package:
+        name: nano
+        state: present
+      become: true
