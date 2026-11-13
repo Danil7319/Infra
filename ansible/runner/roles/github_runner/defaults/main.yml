@@ -3,7 +3,7 @@
 github_runner_version: "2.338.2"
 github_runner_user: "github-runner"
 github_runner_home: "/home/{{ github_runner_user }}"
-github_runner_dir: "{{ github_runner_home }}/actions-runner"
+github_runner_dir: "/opt/actions-runner"
 
 # Эти переменные должны быть переопределены (например, в group_vars или через -e)
 github_owner: "Danil7319"
@@ -13,3 +13,6 @@ github_repo: "ai-test"
 github_runner_scope: "repo"
 github_runner_labels: "self-hosted"
 github_runner_name: "{{ ansible_hostname }}"
+
+# Установите в true, чтобы принудительно переконфигурировать раннер
+github_runner_reconfigure: false

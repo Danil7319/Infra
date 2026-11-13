@@ -24,13 +24,13 @@
 
 - name: Download and unpack GitHub Runner
   when: not runner_installed.stat.exists
-  become: true
   block:
     - name: Download runner package
       ansible.builtin.get_url:
         url: "https://github.com/actions/runner/releases/download/v{{ github_runner_version }}/actions-runner-linux-x64-{{ github_runner_version }}.tar.gz"
         dest: "/tmp/actions-runner.tar.gz"
         mode: '0644'
+      become: true
 
     - name: Unpack runner package
       ansible.builtin.unarchive:
@@ -39,6 +39,13 @@
         remote_src: true
         owner: "{{ github_runner_user }}"
         group: "{{ github_runner_user }}"
+      become: true
+
+- name: Install dependencies
+  ansible.builtin.command:
+    cmd: ./bin/installdependencies.sh
+    chdir: "{{ github_runner_dir }}"
+  become: true
 
 - name: Check if runner is already configured
   ansible.builtin.stat:
@@ -46,8 +53,31 @@
   register: runner_configured
   become: true
 
+- name: Stop and uninstall existing service if reconfiguring
+  when: github_runner_reconfigure | bool and runner_configured.stat.exists
+  block:
+    - name: Stop runner service
+      ansible.builtin.command:
+        cmd: "./svc.sh stop"
+        chdir: "{{ github_runner_dir }}"
+      become: true
+      ignore_errors: true
+
+    - name: Uninstall runner service
+      ansible.builtin.command:
+        cmd: "./svc.sh uninstall"
+        chdir: "{{ github_runner_dir }}"
+      become: true
+      ignore_errors: true
+
+    - name: Remove .runner file to force reconfiguration
+      ansible.builtin.file:
+        path: "{{ github_runner_dir }}/.runner"
+        state: absent
+      become: true
+
 - name: Configure and install runner as a service
-  when: not runner_configured.stat.exists
+  when: not runner_configured.stat.exists or (github_runner_reconfigure | bool)
   block:
     - name: Run config.sh
       ansible.builtin.command:
@@ -61,14 +91,34 @@
         chdir: "{{ github_runner_dir }}"
       become: true
       become_user: "{{ github_runner_user }}"
-      no_log: true
 
 - name: Install and start runner service
   ansible.builtin.command:
-    cmd: ./svc.sh {{ item }}
+    cmd: "./svc.sh {{ item }} {{ github_runner_user }}"
     chdir: "{{ github_runner_dir }}"
-  with_items:
+  loop:
     - install
     - start
   become: true
-  ignore_errors: true # Если уже установлен/запущен
+  register: svc_result
+  failed_when: >
+    svc_result.rc != 0 and
+    'already contains a service' not in svc_result.stderr and
+    'already exists' not in svc_result.stderr and
+    'is already running' not in svc_result.stderr
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+  become: true
+
+- name: Debug service name
+  ansible.builtin.shell: "ls /etc/systemd/system/actions.runner.*"
+  register: service_files
+  become: true
+  changed_when: false
+  ignore_errors: true
+
+- name: Display service files found
+  ansible.builtin.debug:
+    var: service_files.stdout_lines
