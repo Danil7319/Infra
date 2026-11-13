@@ -1,7 +1,0 @@
----
-# Ключи для конфигурации пользователя от которого будет работать ansible
-user_auth_key_path: "{{ lookup('env', 'USER_AUTH_KEY_PATH') | default('~/.ssh/id_rsa.pub', true) }}"
-user_auth_key: "{{ lookup('file', user_auth_key_path) }}"
-
-#Токен для конфигурации раннера
-github_registration_token: "{{ lookup('env', 'GITHUB_REGISTRATION_TOKEN') | default('', true) }}"

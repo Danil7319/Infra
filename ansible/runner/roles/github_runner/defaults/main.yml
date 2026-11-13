@@ -11,6 +11,10 @@ github_repo: "ai-test"
 
 # Укажите 'repo' или 'org'
 github_runner_scope: "repo"
+
+# Регистрационный токен (рекомендуется передавать через переменную окружения GITHUB_REGISTRATION_TOKEN)
+github_registration_token: "{{ lookup('env', 'GITHUB_REGISTRATION_TOKEN') }}"
+
 github_runner_labels: "self-hosted"
 github_runner_name: "{{ ansible_hostname }}"
 
