@@ -16,3 +16,8 @@ github_runner_name: "{{ ansible_hostname }}"
 
 # Установите в true, чтобы принудительно переконфигурировать раннер
 github_runner_reconfigure: false
+
+# DeepSeek Harness (dsh) configuration
+nodejs_version: "22" # Will install Node.js 22.x
+dsh_package: "@deepseek-ai/dsh@latest"
+pnpm_version: "10"
