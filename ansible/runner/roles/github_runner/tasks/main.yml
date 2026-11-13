@@ -122,3 +122,7 @@
 - name: Display service files found
   ansible.builtin.debug:
     var: service_files.stdout_lines
+
+- name: Setup DeepSeek Harness (dsh)
+  ansible.builtin.import_tasks: dsh.yml
+  tags: ["dsh"]

@@ -1,0 +1,61 @@
+---
+- name: Install Node.js from NodeSource
+  become: true
+  block:
+    - name: Download NodeSource setup script
+      ansible.builtin.get_url:
+        url: "https://deb.nodesource.com/setup_{{ nodejs_version }}.x"
+        dest: "/tmp/nodesource_setup.sh"
+        mode: '0755'
+
+    - name: Run NodeSource setup script
+      ansible.builtin.command:
+        cmd: "/tmp/nodesource_setup.sh"
+        creates: "/etc/apt/sources.list.d/nodesource.list"
+
+    - name: Install Node.js
+      ansible.builtin.package:
+        name: nodejs
+        state: present
+        update_cache: true
+
+- name: Install pnpm globally
+  ansible.builtin.npm:
+    name: pnpm
+    global: true
+    version: "{{ pnpm_version }}"
+  become: true
+
+- name: Install @deepseek-ai/dsh globally (system-wide)
+  ansible.builtin.npm:
+    name: "{{ dsh_package }}"
+    global: true
+  become: true
+  environment:
+    NPM_CONFIG_PREFIX: /usr/local
+  register: dsh_install
+  until: dsh_install is success
+  retries: 3
+  delay: 10
+
+- name: Verify installation
+  block:
+    - name: Check Node.js version
+      ansible.builtin.command:
+        cmd: node --version
+      register: node_version_check
+      changed_when: false
+
+    - name: Check dsh version
+      ansible.builtin.command:
+        cmd: dsh --version
+      become: true
+      become_user: "{{ github_runner_user }}"
+      register: dsh_version_check
+      changed_when: false
+
+    - name: Debug versions
+      ansible.builtin.debug:
+        msg:
+          - "Node.js version: {{ node_version_check.stdout }}"
+          - "dsh version: {{ dsh_version_check.stdout }}"
