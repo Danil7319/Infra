@@ -1,8 +1,6 @@
 - name: Configure VPS
   hosts: vps
   roles:
-    - role: user_setup
-      tags: ["user_setup"]
     - role: github_runner
       tags: ["github_runner"]
   tasks:

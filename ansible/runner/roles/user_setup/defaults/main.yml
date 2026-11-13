@@ -1,5 +1,0 @@
----
-user_name: "debian"
-user_groups: "sudo"
-user_shell: "/bin/bash"
-# user_auth_key определяется в group_vars или inventory через lookup('file', path)
